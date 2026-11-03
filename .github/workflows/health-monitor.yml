@@ -1,0 +1,56 @@
+name: API Health Monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"    # Every 15 minutes (UTC)
+  workflow_dispatch:           # Manual "Run workflow" button
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "config/**"
+      - ".github/workflows/health-monitor.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    name: Run health checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run health checks
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python src/health_monitor.py --config config/endpoints.json --report-dir reports
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 14
+
+      - name: Open GitHub issue on scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "API health check failed ($(date -u +'%Y-%m-%d %H:%M UTC'))" \
+            --body "One or more endpoints failed. See run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

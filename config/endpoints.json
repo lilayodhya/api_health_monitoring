@@ -1,0 +1,29 @@
+{
+  "default_timeout": 10,
+  "endpoints": [
+    {
+      "name": "HTTPBin Status OK",
+      "url": "https://httpbin.org/status/200",
+      "method": "GET",
+      "expected_status": 200,
+      "max_latency_ms": 2000
+    },
+    {
+      "name": "JSONPlaceholder Posts",
+      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "method": "GET",
+      "expected_status": 200,
+      "max_latency_ms": 3000
+    },
+    {
+      "name": "GitHub API",
+      "url": "https://api.github.com",
+      "method": "GET",
+      "expected_status": 200,
+      "max_latency_ms": 3000,
+      "headers": {
+        "Accept": "application/vnd.github+json"
+      }
+    }
+  ]
+}
